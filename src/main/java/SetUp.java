@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import java.awt.*;
@@ -7,6 +8,7 @@ import java.io.Console;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.EventObject;
 
 public class SetUp extends JFrame {
@@ -14,6 +16,13 @@ public class SetUp extends JFrame {
     private final static  String TITLE = "Text Editor";
     private final static Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
     private final static JSplitPane SPLIT_PANE = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+    JPanel topPane= new JPanel();
+    JPanel bottomComponent = new JPanel();
+    JTree jTree = new JTree();
+    JScrollPane scrollPane;
+    int comp;
+    JSplitPane rightPane;
+    JTextArea txArea;
 
     public SetUp(){
         super(TITLE);
@@ -22,6 +31,7 @@ public class SetUp extends JFrame {
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
         this.setSize(new Dimension(screenSize.width, screenSize.height));
         this.setMinimumSize(new Dimension(screenSize.width/2, screenSize.height/2) );
+        jTree.setBorder(new EmptyBorder(10, 20 , 10 , 20));
         initializeMenuBar();
         initializePanels();
 
@@ -44,6 +54,7 @@ public class SetUp extends JFrame {
 
         JMenu[] jMenus = {file, edit, find, preferences, window, terminal};
 
+
         for (JMenu element: jMenus) {
             element.addMenuListener(new MenuListener() {
                 @Override
@@ -51,14 +62,20 @@ public class SetUp extends JFrame {
                     // Type change
                     String element = ( (JMenu) e.getSource()).getText();
 
-                    // Checks if terminal is clicked
-                    if (element.equalsIgnoreCase("terminal")){
-                        // Sets frame visibility to false thereby hiding it
-                        SPLIT_PANE.getBottomComponent().setVisible(!SPLIT_PANE.getBottomComponent().isVisible());
+                    if(element.equalsIgnoreCase("terminal")){
+                        System.out.printf("This is a %s component of height %s",element,
+                                topPane.getPreferredSize().getHeight());
+                        SPLIT_PANE.getBottomComponent().setVisible(!bottomComponent.isVisible());
+                        topPane.setPreferredSize(new Dimension(screenSize.width, 800));
 
-                        SPLIT_PANE.setResizeWeight(0.6);
+                        for (Component components :topPane.getComponents()) {
+                            components.setPreferredSize(new Dimension(screenSize.width, 900));
+                        }
+                        // testing
+                        System.out.println(topPane.getPreferredSize().height);
+                        System.out.printf("This is a %s component of height %s",element,
+                                topPane.getPreferredSize().getHeight());
                     }
-
                 }
 
                 @Override
@@ -95,7 +112,9 @@ public class SetUp extends JFrame {
             String text = ((JMenuItem) e.getSource()).getText();
             if(text.equalsIgnoreCase("exit")) System.exit(0);
         });
-
+        
+        openFile.addActionListener(e -> new HandleComponentEvents().handleFileAndFolder(this, e));
+        openFolder.addActionListener(e -> new HandleComponentEvents().handleFileAndFolder(this, e));
 
         file.add(openFile);
         file.addSeparator();
@@ -111,48 +130,34 @@ public class SetUp extends JFrame {
         newOption.add(new JMenuItem("Folder"));
 
         this.setJMenuBar(menuBar);
-    }
 
-    void handleComponentEvent(Component element){
-        element.addComponentListener(new ComponentListener() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-
-            }
-
-            @Override
-            public void componentMoved(ComponentEvent e) {
-
-            }
-
-            @Override
-            public void componentShown(ComponentEvent e) {
-
-            }
-
-            @Override
-            public void componentHidden(ComponentEvent e) {
-
-            }
-        });
-    }
-
-    void handleMenuItemClicks(JMenuItem element){
-        element.setAccelerator(
-                KeyStroke.getKeyStroke(
-                        (char) KeyEvent.VK_O));
-        System.out.println(element.getText());
     }
 
     void initializePanels(){
-        JTextArea tx = new JTextArea();
+        SPLIT_PANE.setPreferredSize(new Dimension(screenSize.width, screenSize.height));
+        comp = SPLIT_PANE.getPreferredSize().height;
+        txArea = new JTextArea();
+        txArea.setPreferredSize(new Dimension(80, 80));
         
-        JScrollPane scrollPane = new JScrollPane(tx);
-        SPLIT_PANE.setTopComponent(new JPanel().add(new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                new JTree(), scrollPane)));
-        SPLIT_PANE.setBottomComponent(new JPanel());
+        scrollPane = new JScrollPane(txArea,
+                JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        rightPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, jTree, scrollPane);
 
-        SPLIT_PANE.setResizeWeight(0.6);
+
+        // Set sizes for panels
+        topPane.setPreferredSize(new Dimension(screenSize.width, comp-300)); // sets size for all elements in the topPane
+        scrollPane.setPreferredSize(new Dimension(1400, topPane.getPreferredSize().height)); // sets JScrollPane size
+        jTree.setPreferredSize(new Dimension(screenSize.width/8, topPane.getPreferredSize().height)); // sets JTree size
+        SPLIT_PANE.setPreferredSize(SPLIT_PANE.getPreferredSize());
+        scrollPane.validate();
+        SPLIT_PANE.validate();
+
+
+        topPane.add(rightPane);
+        SPLIT_PANE.setTopComponent(topPane);
+        SPLIT_PANE.setBottomComponent(bottomComponent);
+
+
         this.add(SPLIT_PANE);
 
     }
