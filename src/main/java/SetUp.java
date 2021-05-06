@@ -4,12 +4,6 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.Console;
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.EventObject;
 
 public class SetUp extends JFrame {
 
@@ -31,6 +25,7 @@ public class SetUp extends JFrame {
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
         this.setSize(new Dimension(screenSize.width, screenSize.height));
         this.setMinimumSize(new Dimension(screenSize.width/2, screenSize.height/2) );
+        this.validate();
         jTree.setBorder(new EmptyBorder(10, 20 , 10 , 20));
         initializeMenuBar();
         initializePanels();
@@ -68,7 +63,7 @@ public class SetUp extends JFrame {
                         SPLIT_PANE.getBottomComponent().setVisible(!bottomComponent.isVisible());
                         topPane.setPreferredSize(new Dimension(screenSize.width, 800));
 
-                        for (Component components :topPane.getComponents()) {
+                        for (Component components : topPane.getComponents()) {
                             components.setPreferredSize(new Dimension(screenSize.width, 900));
                         }
                         // testing
@@ -113,8 +108,8 @@ public class SetUp extends JFrame {
             if(text.equalsIgnoreCase("exit")) System.exit(0);
         });
         
-        openFile.addActionListener(e -> new HandleComponentEvents().handleFileAndFolder(this, e));
-        openFolder.addActionListener(e -> new HandleComponentEvents().handleFileAndFolder(this, e));
+        openFile.addActionListener(e -> new HandleComponentEvents(this, e).handleFileAndFolder());
+        openFolder.addActionListener(e -> new HandleComponentEvents(this, e).handleFileAndFolder());
 
         file.add(openFile);
         file.addSeparator();
