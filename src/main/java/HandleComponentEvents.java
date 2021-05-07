@@ -4,15 +4,9 @@ import java.io.File;
 import java.util.EventObject;
 
 public class HandleComponentEvents {
-    Component component;
-    EventObject name;
     File selectedFile;
-    HandleComponentEvents(Component componentName, EventObject eventObject){
-        component = componentName;
-        name = eventObject;
-    }
 
-    void handleFileAndFolder(){
+    void handleFileAndFolder(Component component, EventObject name){
          JFileChooser fileChooser = new JFileChooser();
          String text = ((JMenuItem) name.getSource()).getText();
          // conditional statement using a ternary operator in a batch
@@ -24,8 +18,8 @@ public class HandleComponentEvents {
         selectedFile = fileChooser.getSelectedFile();
         if (result == JFileChooser.APPROVE_OPTION) {
             System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+            System.out.println(selectedFile);
         }
-        new HandleJTree(selectedFile, new SetUp().jTree);
     }
 
     void handleTerminal(JComponent terminal){

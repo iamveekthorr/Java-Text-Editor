@@ -1,3 +1,7 @@
+import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.IntelliJTheme;
+import com.formdev.flatlaf.intellijthemes.FlatDraculaIJTheme;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.MenuEvent;
@@ -17,27 +21,49 @@ public class SetUp extends JFrame {
     int comp;
     JSplitPane rightPane;
     JTextArea txArea;
+    JMenuBar menuBar;
+    JTabbedPane tabPane;
 
     public SetUp(){
         super(TITLE);
         this.setTitle(TITLE);
-        this.setVisible(true);
+
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
+        this.setExtendedState(JFrame.MAXIMIZED_BOTH);
         this.setSize(new Dimension(screenSize.width, screenSize.height));
         this.setMinimumSize(new Dimension(screenSize.width/2, screenSize.height/2) );
         this.validate();
+
         jTree.setBorder(new EmptyBorder(10, 20 , 10 , 20));
+        setLookAndFeel();
         initializeMenuBar();
         initializePanels();
 
+        // Sets frame to visible only when the elements are already set inside the frame
+        this.setVisible(true);
     }
 
 
-    void initializeMenuBar(){
-        JMenuBar menuBar = new JMenuBar();
-        UIManager.put("MenuBar.background", Color.GRAY);
-        menuBar.setPreferredSize(new Dimension(100, 30));
+    void setLookAndFeel(){
 
+            try {
+                UIManager.setLookAndFeel( new FlatLightLaf());
+                UIManager.put( "ScrollBar.showButtons", true );
+                UIManager.put( "TabbedPane.showTabSeparators", true );
+                UIManager.put( "TabbedPane.selectedBackground", Color.white );
+                UIManager.put( "Component.hideMnemonics", false );
+
+                // Remove comment for dark mode
+                // FlatDraculaIJTheme.install();
+
+            }catch ( UnsupportedLookAndFeelException ex){
+                System.out.println(ex.getMessage());
+            }
+
+    }
+
+    void initializeMenuBar() {
+        menuBar = new JMenuBar();
         // Array of JMenus
         JMenu edit, find, preferences, window, terminal,  file;
         file= new JMenu("File");
@@ -48,6 +74,7 @@ public class SetUp extends JFrame {
         terminal = new JMenu("Terminal");
 
         JMenu[] jMenus = {file, edit, find, preferences, window, terminal};
+
 
 
         for (JMenu element: jMenus) {
@@ -71,6 +98,15 @@ public class SetUp extends JFrame {
                         System.out.printf("This is a %s component of height %s",element,
                                 topPane.getPreferredSize().getHeight());
                     }
+
+                    if (element.equalsIgnoreCase("preferences")){
+                        try {
+                            UIManager.setLookAndFeel( new FlatLightLaf() );
+                            System.out.println("prefs");
+                        } catch (UnsupportedLookAndFeelException unsupportedLookAndFeelException) {
+                            unsupportedLookAndFeelException.printStackTrace();
+                        }
+                    }
                 }
 
                 @Override
@@ -86,7 +122,7 @@ public class SetUp extends JFrame {
 
 
         }
-
+        // Adding items to the JMenuBar
         menuBar.add(file).setForeground(Color.WHITE);
         menuBar.add(edit).setForeground(Color.WHITE);
         menuBar.add(find).setForeground(Color.WHITE);
@@ -108,8 +144,8 @@ public class SetUp extends JFrame {
             if(text.equalsIgnoreCase("exit")) System.exit(0);
         });
         
-        openFile.addActionListener(e -> new HandleComponentEvents(this, e).handleFileAndFolder());
-        openFolder.addActionListener(e -> new HandleComponentEvents(this, e).handleFileAndFolder());
+        openFile.addActionListener(e -> new HandleComponentEvents().handleFileAndFolder(this, e));
+        openFolder.addActionListener(e -> new HandleComponentEvents().handleFileAndFolder(this, e));
 
         file.add(openFile);
         file.addSeparator();
@@ -124,6 +160,7 @@ public class SetUp extends JFrame {
         newOption.add(new JMenuItem("File", KeyEvent.VK_N));
         newOption.add(new JMenuItem("Folder"));
 
+        // Added MenuBar to the frame
         this.setJMenuBar(menuBar);
 
     }
@@ -131,30 +168,53 @@ public class SetUp extends JFrame {
     void initializePanels(){
         SPLIT_PANE.setPreferredSize(new Dimension(screenSize.width, screenSize.height));
         comp = SPLIT_PANE.getPreferredSize().height;
-        txArea = new JTextArea();
-        txArea.setPreferredSize(new Dimension(80, 80));
-        
-        scrollPane = new JScrollPane(txArea,
-                JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-        rightPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, jTree, scrollPane);
+        JPanel rightPanelContainer = new JPanel(false);
+        rightPanelContainer.setLayout(new GridLayout(1, 1));
+
+
+        // adding tabbed view
+        tabPane = new JTabbedPane();
+        tabPane.putClientProperty("JTabbedPane.showTabSeparators", true);
+        tabPane.putClientProperty("JTabbedPane.showContentSeparator", true);
+
+        tabPane.addTab("[UNTITLED]",makeComponent(new JPanel(), new JScrollPane(), new JTextArea() ));
+
+        tabPane.addTab("[TITLE]", makeComponent(new JPanel(), new JScrollPane(), new JTextArea() ));
+        tabPane.addTab("[DOTENV]", makeComponent(new JPanel(), new JScrollPane(), new JTextArea() ));
+
+
+        rightPanelContainer.add(tabPane, BorderLayout.CENTER);
+
+        rightPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, jTree, rightPanelContainer);
+        rightPane.setResizeWeight(0.2);
+        topPane.setPreferredSize(SPLIT_PANE.getPreferredSize());
+        rightPane.setPreferredSize(topPane.getPreferredSize());
+        rightPanelContainer.setPreferredSize(getContentPane().getPreferredSize());
+
 
 
         // Set sizes for panels
-        topPane.setPreferredSize(new Dimension(screenSize.width, comp-300)); // sets size for all elements in the topPane
-        scrollPane.setPreferredSize(new Dimension(1400, topPane.getPreferredSize().height)); // sets JScrollPane size
-        jTree.setPreferredSize(new Dimension(screenSize.width/8, topPane.getPreferredSize().height)); // sets JTree size
         SPLIT_PANE.setPreferredSize(SPLIT_PANE.getPreferredSize());
-        scrollPane.validate();
         SPLIT_PANE.validate();
 
 
         topPane.add(rightPane);
+        topPane.setPreferredSize(new Dimension(this.getWidth(), this.getHeight()));
         SPLIT_PANE.setTopComponent(topPane);
         SPLIT_PANE.setBottomComponent(bottomComponent);
-
+        SPLIT_PANE.setResizeWeight(0.7);
 
         this.add(SPLIT_PANE);
+    }
 
+    // Take in an arbitrary number of components
+    Component makeComponent(Component...args ){
+        JPanel panel = new JPanel();
+        JTextArea textArea = new JTextArea();
+        JScrollPane scrollPanel = new JScrollPane(textArea,  JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPanel.putClientProperty("JScrollPane.smoothScrolling", true);
+        return panel.add(scrollPanel);
     }
 
 }
