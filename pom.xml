@@ -13,6 +13,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
                 <configuration>
                     <source>14</source>
                     <target>14</target>
@@ -40,7 +41,38 @@
             <artifactId>flatlaf-intellij-themes</artifactId>
             <version>1.1.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.jetbrains.pty4j</groupId>
+            <artifactId>pty4j</artifactId>
+            <version>0.11.3</version>
+        </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <repositories>
+                <repository>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                    <id>bintray-jetbrains-pty4j</id>
+                    <name>bintray</name>
+                    <url>https://jetbrains.bintray.com/pty4j</url>
+                </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                    <id>bintray-jetbrains-pty4j</id>
+                    <name>bintray-plugins</name>
+                    <url>https://jetbrains.bintray.com/pty4j</url>
+                </pluginRepository>
+            </pluginRepositories>
+            <id>bintray</id>
+        </profile>
+    </profiles>
 
 
 </project>
