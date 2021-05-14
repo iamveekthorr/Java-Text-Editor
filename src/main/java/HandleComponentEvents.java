@@ -1,5 +1,10 @@
+import org.jetbrains.annotations.NotNull;
+
 import javax.swing.*;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.io.File;
 import java.util.*;
@@ -19,31 +24,22 @@ public class HandleComponentEvents {
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
         result =  fileChooser.showOpenDialog(component);
 
-//        filePath = fileChooser.getSelectedFile();
+
         if (result == JFileChooser.APPROVE_OPTION) {
+            Initialize initialSet = new Initialize();
             setFilePath(fileChooser.getSelectedFile().getPath());
-            System.out.printf("completed%sn",  filePath);
+            JTree tree = createJTree(filePath.getName(), String.valueOf(filePath));
+            initialSet.setjTree(tree);
+            Initialize.leftContainer.add(initialSet.makeTreeComponent(tree));
+            SwingUtilities.updateComponentTreeUI(tree);
+            System.out.printf("completed %s",  filePath);
         }
-    }
-
-
-
-    String getPathName(){
-        return filePath.getAbsolutePath();
     }
 
     public void setFilePath(String filePath) {
         this.filePath = new File(filePath);
         System.out.println(filePath);
-    }
 
-    void setFileChooser(){
-        this.filePath = new File(this.getPathName());
-    }
-    String getFileName(){
-        File selectedFile = fileChooser.getSelectedFile();
-        System.out.println(selectedFile);
-        return selectedFile.getName();
     }
 
      File[] getListFiles(String Path) {
@@ -51,6 +47,51 @@ public class HandleComponentEvents {
         return file.listFiles();
     }
 
+    JTree createJTree(@NotNull String fileName, String files) {
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode(fileName);
+        addChild(root, files);
+        DefaultTreeModel treeModel = new DefaultTreeModel(root);
+        treeModel.addTreeModelListener(new TreeModelListener() {
+            @Override
+            public void treeNodesChanged(TreeModelEvent e) {
+                DefaultMutableTreeNode node;
+                node = (DefaultMutableTreeNode)
+                        (e.getTreePath().getLastPathComponent());
+
+                /*
+                 * If the event lists children, then the changed
+                 * node is the child of the node we have already
+                 * gotten.  Otherwise, the changed node and the
+                 * specified node are the same.
+                 */
+                try {
+                    int index = e.getChildIndices()[0];
+                    node = (DefaultMutableTreeNode)
+                            (node.getChildAt(index));
+                    System.out.println(node);
+                } catch (NullPointerException exc) {
+                    exc.printStackTrace();
+                }
+            }
+
+            @Override
+            public void treeNodesInserted(TreeModelEvent e) {
+
+            }
+
+            @Override
+            public void treeNodesRemoved(TreeModelEvent e) {
+
+            }
+
+            @Override
+            public void treeStructureChanged(TreeModelEvent e) {
+
+            }
+        });
+        treeModel.reload();
+        return new JTree(treeModel);
+    }
 
     void addChild(DefaultMutableTreeNode rootNode, String path) {
         File[] files = this.getListFiles(path);
@@ -65,30 +106,8 @@ public class HandleComponentEvents {
                     rootNode.add(new DefaultMutableTreeNode(file.getName()));
                 }
             }
-
         }
+
     }
 
-//    String getFile(){
-//        return selectedFile = new File(file.getAbsolutePath());;
-//    }
-//    public void setFileChooser(JFileChooser fileChooser) {
-//        this.fileChooser = fileChooser;
-//        if (result == JFileChooser.APPROVE_OPTION) {
-//            System.out.println("Selected file: " + getNewSelectedFile().length);
-//        }
-//    }
-//
-//    File[] getNewSelectedFile(){
-//        selectedFile = fileChooser.getSelectedFile();
-//
-//        System.out.println("OUCH: SELECTED" + selectedFile);
-//        return selectedFile.listFiles();
-//    }
-
-    void handleTerminal(JComponent terminal){
-        if (terminal.isVisible()){
-            terminal.setVisible(false);
-        }
-    }
 }
