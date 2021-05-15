@@ -1,9 +1,15 @@
 import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.intellijthemes.FlatDarkFlatIJTheme;
 import com.formdev.flatlaf.intellijthemes.FlatLightFlatIJTheme;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.IOException;
+import java.util.stream.IntStream;
 
 public class SetUp extends JFrame{
     Initialize init = new Initialize();
@@ -12,8 +18,15 @@ public class SetUp extends JFrame{
     SetUp(){
         JFrame.setDefaultLookAndFeelDecorated(true);
         JDialog.setDefaultLookAndFeelDecorated(true);
+        this.setFont(new Font("FiraCode", Font.PLAIN, 16));
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                System.out.println(e.getClickCount());
+            }
+        });
         init();
-
         Initialize.SPLIT_PANE.setBorder(null);
     }
 
@@ -27,9 +40,9 @@ public class SetUp extends JFrame{
             UIManager.put( "TabbedPane.selectedBackground", Color.lightGray );
             UIManager.put( "Component.hideMnemonics", false );
             SwingUtilities.updateComponentTreeUI(this);
-            SwingUtilities.updateComponentTreeUI(init.topSplitPane);
+            SwingUtilities.updateComponentTreeUI(Initialize.topSplitPane);
             SwingUtilities.updateComponentTreeUI(Initialize.SPLIT_PANE);
-            SwingUtilities.updateComponentTreeUI(init.jTree == null ? init.jTree = new JTree() : init.jTree);
+            SwingUtilities.updateComponentTreeUI(init.getJTree() == null ? init.jTree = new JTree() : init.getJTree());
             initializeMenuBar();
             initializePanels();
 
@@ -42,15 +55,20 @@ public class SetUp extends JFrame{
     }
 
     void initializeMenuBar(){
-        init.menuBar = new JMenuBar();
+        init.setMenuBar(new JMenuBar());
         JMenu[] menuItemComponents = insertMenuItems();
         // Array of JMenus
-        for (JMenu element: menuItemComponents) { init.menuBar.add(element); }
-        init.menuBar.setBorder(null);
+        for (JMenu element: menuItemComponents) { init.getMenuBar().add(element); }
+        init.getMenuBar().setBorder(null);
         // Added MenuBar to the frame
-        this.setJMenuBar(init.menuBar);
+        this.setJMenuBar(init.getMenuBar());
     }
 
+    /**
+     * @return JMenu[]
+     * Adds inserts all the elements into
+     * the Menubar
+     */
     JMenu[] insertMenuItems(){
         JMenu edit, find, preferences, window, terminal,  file;
         file= new JMenu("File");
@@ -75,6 +93,10 @@ public class SetUp extends JFrame{
         return new JMenu[]{file, edit, find, preferences, window, terminal};
     }
 
+    /**
+     * @return JMenuItem[] Array
+     * For Preferences Menu
+     * */
     JMenuItem[] addPreferencesMenuItems(){
         JMenuItem darkModeTheme, lightTheme;
 
@@ -85,6 +107,10 @@ public class SetUp extends JFrame{
         return new JMenuItem[]{darkModeTheme, lightTheme};
     }
 
+    /**
+     * @return JMenuItem[] Array
+     * for Terminal Menu
+     * */
     JMenuItem[] addTerminalMenuItems(){
         JMenuItem showTerminal, hideTerminal;
 
@@ -95,7 +121,10 @@ public class SetUp extends JFrame{
 
         return new JMenuItem[]{showTerminal, hideTerminal};
     }
-
+    /**
+     * @return JMenuItem[] Array
+     * For File Menu
+     * */
     JMenuItem[] addFileMenuItems(){
         JMenuItem openFile, openFolder, save, exit, newFile;
         newFile = new JMenuItem("New File");
@@ -109,6 +138,11 @@ public class SetUp extends JFrame{
         return new JMenuItem[]{newFile,openFile, openFolder, save, exit};
     }
 
+    /**
+     * @param args (JMenuItems Array)
+     * loops all the elements in the array
+     * Adds event listener to each element
+     * */
     void addListenersToMenuItemComponents(JMenuItem... args){
         for (JMenuItem el: args ){
             el.addActionListener(e -> {
@@ -136,6 +170,13 @@ public class SetUp extends JFrame{
                 if (text.equalsIgnoreCase("New File")){
                     addNewFileListener();
                 }
+                if(text.equalsIgnoreCase("save")){
+                    try {
+                        new HandleComponentEvents().handleSaveEvent(HandleComponentEvents.getFilePath());
+                    } catch (IOException| NullPointerException ex) {
+                        ex.printStackTrace();
+                    }
+                }
             });
         }
     }
@@ -160,22 +201,51 @@ public class SetUp extends JFrame{
 
     void handleShowTerminalEvent(){
         Initialize.SPLIT_PANE.getBottomComponent().setVisible(true);
-        for (Component components :  init.topPane.getComponents()) {
+        for (Component components :  init.getTopPane().getComponents()) {
             components.setPreferredSize(new Dimension(Initialize.screenSize.width, 900));
         }
     }
 
     void handleHideTerminal(){
         Initialize.SPLIT_PANE.getBottomComponent().setVisible(false);
-        init.topPane.setPreferredSize(new Dimension(Initialize.screenSize.width, 800));
+        init.getTopPane().setPreferredSize(new Dimension(Initialize.screenSize.width, 800));
     }
 
     void addNewFileListener(){
-        init.tabPane.addTab("[UNTITLED]", makeTabComponent(new JPanel(),
-                new JScrollPane(), new JEditorPane() ));
+        JMenuItem cut = new JMenuItem("Cut");
+        JMenuItem copy = new JMenuItem("Copy");
+        JMenuItem paste = new JMenuItem("Paste");
+        JPopupMenu popupMenu = new JPopupMenu();
+        popupMenu.add(copy);
+        popupMenu.add(paste);
+        popupMenu.add(cut);
+        String newName = "[UNTITLED]";
+        JPanel newTab = init.getTabContainer();
         init.tabPane.setBorder(null);
+        init.tabPane.add(makeTabComponent(newTab)).addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                System.out.println(e.getButton());
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+                System.out.println(e.getButton());
+            }
+        });
+
+        int tabCount = init.tabPane.getTabCount();
+
+        IntStream.range(0, tabCount).forEach(tabIndex -> init.tabPane.setTitleAt(tabIndex, newName));
     }
 
+    /**
+     * Initializes all the panels
+     * in the frame
+     * @return void
+     * */
     void initializePanels(){
         Initialize.SPLIT_PANE.setPreferredSize(new Dimension(Initialize.screenSize.width,
                 Initialize.screenSize.height));
@@ -193,12 +263,13 @@ public class SetUp extends JFrame{
         rightPanelContainer.add(init.tabPane, BorderLayout.CENTER);
 
         Initialize.topSplitPane.setRightComponent(rightPanelContainer);
-        Initialize.topSplitPane.setLeftComponent(Initialize.leftContainer);
+        Initialize.topSplitPane.setLeftComponent(Initialize.getLeftContainer());
         init.tabPane.setPreferredSize(Initialize.SPLIT_PANE.getPreferredSize());
         Initialize.topSplitPane.setPreferredSize(new Dimension((int) Initialize.screenSize.getWidth(),
                 Initialize.screenSize.height));
         rightPanelContainer.setPreferredSize(new Dimension((int) Initialize.screenSize.getWidth(),
                 Initialize.screenSize.height));
+        rightPanelContainer.setBorder(null);
         Initialize.topSplitPane.setDividerLocation(0.5);
         Initialize.topSplitPane.setResizeWeight(0.2);
 
@@ -207,9 +278,9 @@ public class SetUp extends JFrame{
         // Set sizes for panels
         Initialize.SPLIT_PANE.setPreferredSize(Initialize.SPLIT_PANE.getPreferredSize());
 
-        init.topPane.add(Initialize.topSplitPane);
-        init.topPane.setPreferredSize(new Dimension(this.getWidth(), this.getHeight()));
-        Initialize.SPLIT_PANE.setTopComponent(init.topPane);
+        init.getTopPane().add(Initialize.topSplitPane);
+        init.getTopPane().setPreferredSize(new Dimension(this.getWidth(), this.getHeight()));
+        Initialize.SPLIT_PANE.setTopComponent(init.getTopPane());
 
         Initialize.SPLIT_PANE.setBottomComponent(init.bottomComponent);
         init.bottomComponent.setBackground(getContentPane().getBackground());
@@ -228,17 +299,26 @@ public class SetUp extends JFrame{
         this.add(Initialize.SPLIT_PANE);
     }
 
+
+    /**
+     * @return component containing all the elements
+     * in the Tab
+     * @param args (JPanel)
+     * */
     // Take in an arbitrary number of components
-    Component makeTabComponent(JComponent...args ){
-        for (JComponent component : args){
-            component.setBorder(null);
-            SwingUtilities.updateComponentTreeUI(this);
-        }
+    Component makeTabComponent(@NotNull JComponent...args ){
         JPanel panel = new JPanel();
-        JEditorPane textArea = new JEditorPane();
+        JTextPane textArea = new JTextPane();
+        textArea.setBorder(new EmptyBorder(5, 10, 5, 0 ));
         JScrollPane scrollPanel = new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        TextLineNumber textLineNumber = new TextLineNumber(textArea);
+        textLineNumber.setUpdateFont(true);
+        scrollPanel.setRowHeaderView(textLineNumber);
+        // EXPLICITLY SET BORDERS TO NULL FOR ALL COMPONENTS
+        panel.setBorder(null);
         scrollPanel.setBorder(null);
+        textLineNumber.setBorder(null);
         scrollPanel.putClientProperty("JScrollPane.smoothScrolling", true);
         return panel.add(scrollPanel);
     }
