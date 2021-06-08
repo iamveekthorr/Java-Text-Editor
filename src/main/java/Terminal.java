@@ -1,17 +1,15 @@
-import com.pty4j.PtyProcess;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 
 public class Terminal {
+    String filename = Main.class.getProtectionDomain().getCodeSource().getLocation().toString().substring(6);
     // The command to run in a PTY...
-    String[] cmd = { "/bin/sh", "-l" };
+    String[] cmd = {"cmd","/c","start","cmd","/k","java -jar \"" + filename + "\""};
     // The initial environment to pass to the PTY child process...
     String[] env = { "TERM=xterm" };
 
-    PtyProcess pty = PtyProcess.exec(cmd, env);
+    Process pty = Runtime.getRuntime().exec(cmd, env);
 
     OutputStream os = pty.getOutputStream();
     InputStream is = pty.getInputStream();
@@ -23,9 +21,6 @@ public class Terminal {
     int result = pty.waitFor();
 
     public Terminal() throws IOException, InterruptedException {
-        System.out.println(os);
-        System.out.println(is);
-        System.out.println(pty);
-        System.out.println(Arrays.toString(env));
+
     }
 }

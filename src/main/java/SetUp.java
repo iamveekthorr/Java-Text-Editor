@@ -1,34 +1,30 @@
 import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.intellijthemes.FlatDarkFlatIJTheme;
 import com.formdev.flatlaf.intellijthemes.FlatLightFlatIJTheme;
+import org.jdesktop.swingx.JXFrame;
+import org.jdesktop.swingx.JXTree;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.undo.CannotRedoException;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.stream.IntStream;
 
-public class SetUp extends JFrame{
+public class SetUp extends JXFrame{
     Initialize init = new Initialize();
     private final static  String TITLE = "Text Editor";
-
     SetUp(){
-        JFrame.setDefaultLookAndFeelDecorated(true);
+        JXFrame.setDefaultLookAndFeelDecorated(true);
         JDialog.setDefaultLookAndFeelDecorated(true);
         this.setFont(new Font("FiraCode", Font.PLAIN, 16));
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
-                System.out.println(e.getClickCount());
-            }
-        });
         init();
         Initialize.SPLIT_PANE.setBorder(null);
     }
+
 
     void init(){
         try {
@@ -42,7 +38,7 @@ public class SetUp extends JFrame{
             SwingUtilities.updateComponentTreeUI(this);
             SwingUtilities.updateComponentTreeUI(Initialize.topSplitPane);
             SwingUtilities.updateComponentTreeUI(Initialize.SPLIT_PANE);
-            SwingUtilities.updateComponentTreeUI(init.getJTree() == null ? init.jTree = new JTree() : init.getJTree());
+            SwingUtilities.updateComponentTreeUI(init.getJTree() == null ? init.jTree = new JXTree() : init.getJTree());
             initializeMenuBar();
             initializePanels();
 
@@ -148,7 +144,8 @@ public class SetUp extends JFrame{
             el.addActionListener(e -> {
                 String text = ((JMenuItem) e.getSource()).getText();
                 // Set event listener for open file
-                if ((text.equalsIgnoreCase("Open File")) || (text.equalsIgnoreCase("Open Folder"))){
+                if ((text.equalsIgnoreCase("Open File")) ||
+                        (text.equalsIgnoreCase("Open Folder"))){
                     new HandleComponentEvents().handleFileAndFolder(this, e);
                 }
 
@@ -177,6 +174,13 @@ public class SetUp extends JFrame{
                         ex.printStackTrace();
                     }
                 }
+                if(text.equalsIgnoreCase("show terminal")){
+                    try {
+                        new Terminal();
+                    } catch (IOException | InterruptedException ioException) {
+                        ioException.printStackTrace();
+                    }
+                }
             });
         }
     }
@@ -186,7 +190,6 @@ public class SetUp extends JFrame{
             FlatDarkFlatIJTheme.install();
             UIManager.put( "TabbedPane.selectedBackground", Color.darkGray );
             SwingUtilities.updateComponentTreeUI(this);
-            System.out.println("Changed");
         }
     }
 
@@ -195,7 +198,6 @@ public class SetUp extends JFrame{
             FlatLightFlatIJTheme.install();
             UIManager.put( "TabbedPane.selectedBackground", Color.lightGray );
             SwingUtilities.updateComponentTreeUI(this);
-            System.out.println("Changed");
         }
     }
 
@@ -212,30 +214,10 @@ public class SetUp extends JFrame{
     }
 
     void addNewFileListener(){
-        JMenuItem cut = new JMenuItem("Cut");
-        JMenuItem copy = new JMenuItem("Copy");
-        JMenuItem paste = new JMenuItem("Paste");
-        JPopupMenu popupMenu = new JPopupMenu();
-        popupMenu.add(copy);
-        popupMenu.add(paste);
-        popupMenu.add(cut);
         String newName = "[UNTITLED]";
         JPanel newTab = init.getTabContainer();
         init.tabPane.setBorder(null);
-        init.tabPane.add(makeTabComponent(newTab)).addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
-                System.out.println(e.getButton());
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                super.mousePressed(e);
-                System.out.println(e.getButton());
-            }
-        });
-
+        init.tabPane.add(makeTabComponent(newTab));
         int tabCount = init.tabPane.getTabCount();
 
         IntStream.range(0, tabCount).forEach(tabIndex -> init.tabPane.setTitleAt(tabIndex, newName));
@@ -302,16 +284,19 @@ public class SetUp extends JFrame{
 
     /**
      * @return component containing all the elements
-     * in the Tab
+     * in the Tab, and Adds mouse action listener to
+     * each returned item
      * @param args (JPanel)
      * */
     // Take in an arbitrary number of components
     Component makeTabComponent(@NotNull JComponent...args ){
         JPanel panel = new JPanel();
         JTextPane textArea = new JTextPane();
+
         textArea.setBorder(new EmptyBorder(5, 10, 5, 0 ));
         JScrollPane scrollPanel = new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPanel.setViewportView(textArea);
         TextLineNumber textLineNumber = new TextLineNumber(textArea);
         textLineNumber.setUpdateFont(true);
         scrollPanel.setRowHeaderView(textLineNumber);
@@ -320,8 +305,91 @@ public class SetUp extends JFrame{
         scrollPanel.setBorder(null);
         textLineNumber.setBorder(null);
         scrollPanel.putClientProperty("JScrollPane.smoothScrolling", true);
+
+        // adds mouse event to all components created by this function
+        showPopupMenu(textArea);
+
+
+
         return panel.add(scrollPanel);
     }
 
+    void showPopupMenu(JTextPane component){
+        JPopupMenu popupMenu = new JPopupMenu();
 
-}
+        component.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                if (e.getButton() == 3) popupMenu.show(component, e.getX(),
+                        e.getY()) ;
+            }
+        });
+
+        for (JMenuItem popUpItem: addMenuItemsToPopUpMenu()) {
+            popupMenu.add(popUpItem);
+
+            popUpItem.addActionListener(e -> {
+                String eventName = ((JMenuItem) e.getSource()).getText();
+                if (eventName.equalsIgnoreCase("cut")){
+                    handleCutAction(component);
+                }
+                if (eventName.equalsIgnoreCase("copy")){
+                    handleCopyAction(component);
+                }
+                if (eventName.equalsIgnoreCase("paste")){
+                    handlePasteAction(component);
+                }
+                if(eventName.equalsIgnoreCase("undo")){
+                    handleUndoEvent();
+                }
+                if(eventName.equalsIgnoreCase("redo")){
+                    handleRedoEvent();
+                }
+            });
+        }
+
+    } // Method show popup menu
+
+    JMenuItem[] addMenuItemsToPopUpMenu(){
+        JMenuItem cut = new JMenuItem("Cut");
+        JMenuItem paste = new JMenuItem("Copy");
+        JMenuItem copy = new JMenuItem("Paste");
+        JMenuItem undoMenu = new JMenuItem("Undo");
+        JMenuItem redoMenu = new JMenuItem("Redo");
+        JMenuItem closeTab = new JMenuItem("Close Tab");
+        return new JMenuItem[]{cut, copy, paste, undoMenu, redoMenu, closeTab};
+    }
+
+    void handleCutAction(JTextPane textArea){
+        if (textArea.getSelectedText() != null) {
+            textArea.cut();
+        }
+    }
+
+    void handleCopyAction(JTextPane textArea){
+        if (textArea.getSelectedText() != null) {
+            textArea.copy();
+        }
+    }
+
+    void handlePasteAction(JTextPane textArea){
+        if (textArea.getSelectedText() != null) {
+            textArea.paste();
+        }
+    }
+    void handleUndoEvent(){
+        try {
+            Initialize.undo.undo();
+        } catch (CannotRedoException cre) {
+            cre.getMessage();
+        }
+    }
+    void handleRedoEvent(){
+        try {
+            Initialize.undo.redo();
+        } catch (CannotRedoException cre) {
+            cre.getCause();
+        }
+    }
+}// End of class Declaration

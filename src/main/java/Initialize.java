@@ -1,4 +1,7 @@
+import org.jdesktop.swingx.JXTree;
+
 import javax.swing.*;
+import javax.swing.undo.UndoManager;
 import java.awt.*;
 
 public class Initialize {
@@ -7,7 +10,7 @@ public class Initialize {
     static final JPanel leftContainer = new JPanel(false);
     JPanel topPane = new JPanel();
     JPanel bottomComponent = new JPanel();
-    JTree jTree;
+    JXTree jTree;
     int comp;
     static final JSplitPane topSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
     JMenuBar menuBar;
@@ -15,6 +18,17 @@ public class Initialize {
     JPanel tabContainer;
     JScrollPane jScrollPane;
     JTextPane jEditorPane;
+    JLabel tabName;
+    static UndoManager undo = new UndoManager();
+
+    // Constructor
+    Initialize() {
+        SwingUtilities.updateComponentTreeUI(topSplitPane);
+    }
+
+    public UndoManager getUndo() {
+        return undo;
+    }
 
     public JTextPane getJEditorPane() {
         return jEditorPane;
@@ -48,8 +62,6 @@ public class Initialize {
         this.tabName = tabName;
     }
 
-    JLabel tabName;
-
     public void setMenuBar(JMenuBar menuBar) {
         this.menuBar = menuBar;
     }
@@ -69,14 +81,10 @@ public class Initialize {
     public JTree getJTree() {
         return jTree;
     }
-    public void setJTree(JTree jTree) {
+
+    public void setJTree(JXTree jTree) {
         this.jTree = jTree;
     }
-    // Constructor
-    Initialize() {
-        SwingUtilities.updateComponentTreeUI(topSplitPane);
-    }
-
 
 
     Component makeTreeComponent(JTree treeComponent) {

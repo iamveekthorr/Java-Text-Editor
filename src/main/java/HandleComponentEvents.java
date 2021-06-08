@@ -1,3 +1,4 @@
+import org.jdesktop.swingx.JXTree;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -5,12 +6,12 @@ import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.*;
+import java.util.EventObject;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
@@ -18,8 +19,13 @@ public class HandleComponentEvents {
     JFileChooser fileChooser = new JFileChooser();
     static File filePath;
     int result;
-
-    void handleFileAndFolder(Component component, EventObject name) {
+    /**
+     * @constructor
+     * @param component, represents component to be added
+     * @param name, represents the eventObject
+     * @return  void, return type void
+     * */
+    void handleFileAndFolder(Component component, @NotNull EventObject name) {
 
         String text = ((JMenuItem) name.getSource()).getText();
         // conditional statement using a ternary operator in a batch
@@ -33,18 +39,27 @@ public class HandleComponentEvents {
         if (result == JFileChooser.APPROVE_OPTION) {
             Initialize initialSet = new Initialize();
             setFilePath(fileChooser.getSelectedFile().getPath());
-            JTree tree = createJTree(filePath.getName(), String.valueOf(filePath));
+            JXTree tree = createJTree(filePath.getName(), String.valueOf(filePath));
             initialSet.setJTree(tree);
             Initialize.getLeftContainer().add(initialSet.makeTreeComponent(tree));
 
             DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
-            System.out.println(model);
             DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
-            root.add(new DefaultMutableTreeNode("another_child"));
+
+            tree.addTreeSelectionListener(e -> {
+                TreePath tp = tree.getSelectionPath();
+                if (tp != null) {
+                    Object filePathToAdd = tp.getLastPathComponent();
+
+                    System.out.println("file path "+filePathToAdd);
+
+                }
+            });
+
+
             model.reload(root);
 
             SwingUtilities.updateComponentTreeUI(tree);
-            System.out.printf("completed %s", filePath);
         }
     }
 
@@ -57,6 +72,11 @@ public class HandleComponentEvents {
         HandleComponentEvents.filePath = new File(filePath);
     }
 
+    /**
+     * @param curDir, takes in current directory
+     * from the current rendered tree
+     * Handles Save Event,
+    */
     void handleSaveEvent(File curDir) throws IOException {
         WatchService watchService = FileSystems.getDefault().newWatchService();
         Path path = Paths.get(curDir.getAbsolutePath());
@@ -92,7 +112,7 @@ public class HandleComponentEvents {
         return file.listFiles();
     }
 
-    JTree createJTree(@NotNull String fileName, String files) {
+    JXTree createJTree(@NotNull String fileName, String files) {
         DefaultMutableTreeNode root = new DefaultMutableTreeNode(fileName);
         addChild(root, files);
         DefaultTreeModel treeModel = new DefaultTreeModel(root);
@@ -104,16 +124,16 @@ public class HandleComponentEvents {
                         (e.getTreePath().getLastPathComponent());
 
                 /*
-                 * If the event lists children, then the changed
-                 * node is the child of the node we have already
-                 * gotten.  Otherwise, the changed node and the
-                 * specified node are the same.
+                  If the event lists children, then the changed
+                  node is the child of the node we have already
+                  gotten.  Otherwise, the changed node and the
+                  specified node are the same.
                  */
                 try {
                     int index = e.getChildIndices()[0];
                     node = (DefaultMutableTreeNode)
                             (node.getChildAt(index));
-                    System.out.println(node);
+                    System.out.println("Node changed "+ node);
                 } catch (NullPointerException exc) {
                     exc.printStackTrace();
                 }
@@ -135,7 +155,7 @@ public class HandleComponentEvents {
             }
         });
         treeModel.reload();
-        return new JTree(treeModel);
+        return new JXTree(treeModel);
     }
 
     void addChild(DefaultMutableTreeNode rootNode, String path) {
@@ -153,6 +173,5 @@ public class HandleComponentEvents {
             }
         }
     }
-
 
 }
